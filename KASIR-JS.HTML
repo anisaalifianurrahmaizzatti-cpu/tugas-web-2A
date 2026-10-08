@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KASIR JS</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f4f8; margin: 0; padding: 20px; }
+  .box { max-width: 520px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  h1 { margin-top: 0; text-align: center; }
+  label { display: block; margin-top: 12px; font-weight: bold; }
+  input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; font-size: 16px; }
+  .btns { margin-top: 16px; display: flex; gap: 8px; }
+  button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: 0; border-radius: 6px; background: #2563eb; color: #fff; }
+  button.reset { background: #6b7280; }
+  #error { color: #dc2626; margin-top: 10px; min-height: 20px; }
+  pre { background: #fffef5; border: 1px dashed #999; padding: 12px; overflow-x: auto; font-size: 13px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>KASIR</h1>
+  <form id="form">
+    <label for="nama">Nama Barang</label>
+    <input type="text" id="nama" placeholder="contoh: sepatu" required>
+
+    <label for="harga">Harga Barang</label>
+    <input type="number" id="harga" min="0" placeholder="contoh: 30000" required>
+
+    <label for="qty">Jumlah Beli (qty)</label>
+    <input type="number" id="qty" min="1" placeholder="contoh: 3" required>
+
+    <div id="error"></div>
+    <div class="btns">
+      <button type="submit">OK</button>
+      <button type="button" class="reset" id="reset">Reset</button>
+    </div>
+  </form>
+
+  <h3>Struk Belanja</h3>
+  <pre id="struk">(belum ada pembelian)</pre>
+</div>
+
+<script>
+  const items = [];
+  const W = 44; // lebar isi struk
+
+  const rupiah = n => n.toLocaleString("id-ID");
+  const kiri = (t, n) => String(t).slice(0, n).padEnd(n);
+  const kanan = (t, n) => String(t).padStart(n);
+  const baris = isi => "+" + isi.padEnd(W) + "+";
+
+  function buatStruk() {
+    if (items.length === 0) return "(belum ada pembelian)";
+
+    const garis = "+".repeat(W + 2);
+    const out = [];
+    out.push(garis);
+    out.push(baris(""));
+    out.push(baris(" " + kiri("nama", 14) + kanan("Harga", 10) + kanan("qty", 5) + kanan("total", 12)));
+    out.push(baris(""));
+
+    let subtotal = 0;
+    items.forEach(it => {
+      const total = it.harga * it.qty;
+      subtotal += total;
+      out.push(baris(" " + kiri(it.nama, 14) + kanan(rupiah(it.harga), 10) + kanan(it.qty, 5) + kanan(rupiah(total), 12)));
+    });
+
+    const diskon = subtotal > 50000 ? subtotal * 0.1 : 0;
+    const bayar = subtotal - diskon;
+
+    out.push(baris(""));
+    out.push(baris(" " + kiri("Subtotal", 29) + kanan(rupiah(subtotal), 12)));
+    out.push(baris(" " + kiri("Diskon 10%", 29) + kanan(diskon ? "-" + rupiah(diskon) : "0", 12)));
+    out.push(baris(" " + kiri("TOTAL BAYAR", 29) + kanan(rupiah(bayar), 12)));
+    out.push(baris(""));
+    out.push(garis);
+    return out.join("\n");
+  }
+
+  const form = document.getElementById("form");
+  const err = document.getElementById("error");
+  const struk = document.getElementById("struk");
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault(); // Enter atau klik OK sama-sama masuk ke sini
+    const nama = document.getElementById("nama").value.trim();
+    const harga = parseFloat(document.getElementById("harga").value);
+    const qty = parseInt(document.getElementById("qty").value, 10);
+
+    if (!nama || isNaN(harga) || isNaN(qty) || harga < 0 || qty < 1) {
+      err.textContent = "Isi semua data dengan benar.";
+      return;
+    }
+    err.textContent = "";
+    items.push({ nama, harga, qty });
+    struk.textContent = buatStruk();
+    form.reset();
+    document.getElementById("nama").focus();
+  });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    items.length = 0;
+    struk.textContent = buatStruk();
+    err.textContent = "";
+  });
+</script>
+</body>
+</html>
